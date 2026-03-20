@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -36,6 +37,9 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 onOpenSettings = { navController.navigate("settings") }
                             )
+                            LaunchedEffect(Unit) {
+                                reportFullyDrawn() // TODO place it at the right place
+                            }
                         }
                         composable("settings") {
                             val viewModel: SettingsViewModel = koinViewModel()
