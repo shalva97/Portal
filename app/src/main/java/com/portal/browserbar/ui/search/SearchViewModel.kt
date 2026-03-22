@@ -7,8 +7,6 @@ import com.portal.browserbar.domain.model.AppModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
@@ -18,21 +16,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
 
-data class SearchUiState(
-    val query: String = "",
-    val searchResults: List<AppModel> = emptyList(),
-    val recentlyUsedApps: List<AppModel> = emptyList(),
-    val isSearching: Boolean = false
-)
-
 @OptIn(FlowPreview::class)
 @KoinViewModel
 class SearchViewModel(
     private val repository: AppRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SearchUiState())
-    val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
+    val uiState = MutableStateFlow(SearchUiState())
 
     private val _allApps = repository.getVisibleApps()
 
@@ -43,10 +33,10 @@ class SearchViewModel(
 
         repository.getRecentlyUsedApps()
             .onEach { apps ->
-                _uiState.update { it.copy(recentlyUsedApps = apps) }
+                uiState.update { it.copy(recentlyUsedApps = apps) }
             }.launchIn(viewModelScope)
 
-        _uiState
+        uiState
             .map { it.query }
             .debounce(100)
             .combine(_allApps) { query, apps ->
@@ -57,13 +47,13 @@ class SearchViewModel(
                 }
             }
             .onEach { results ->
-                _uiState.update { it.copy(searchResults = results, isSearching = _uiState.value.query.isNotBlank()) }
+                uiState.update { it.copy(searchResults = results, isSearching = uiState.value.query.isNotBlank()) }
             }
             .launchIn(viewModelScope)
     }
 
     fun onQueryChanged(newQuery: String) {
-        _uiState.update { it.copy(query = newQuery) }
+        uiState.update { it.copy(query = newQuery) }
     }
 
     private fun searchApps(query: String, apps: List<AppModel>): List<AppModel> {
@@ -106,7 +96,7 @@ class SearchViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             repository.incrementUsage(app.packageName)
             repository.launchApp(app.packageName)
-            _uiState.update { it.copy(query = "") } // Reset search after launch
+            uiState.update { it.copy(query = "") } // Reset search after launch
         }
     }
 
@@ -124,3 +114,10 @@ class SearchViewModel(
         repository.openInPlayStore(packageName)
     }
 }
+
+data class SearchUiState(
+        val query: String = "",
+        val searchResults: List<AppModel> = emptyList(),
+        val recentlyUsedApps: List<AppModel> = emptyList(),
+        val isSearching: Boolean = false
+)
