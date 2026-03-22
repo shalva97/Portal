@@ -33,12 +33,17 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = "search") {
                         composable("search") {
                             val viewModel: SearchViewModel = koinViewModel()
+
                             SearchScreen(
                                 viewModel = viewModel,
                                 onOpenSettings = { navController.navigate("settings") }
                             )
                             LaunchedEffect(Unit) {
-                                reportFullyDrawn() // TODO place it at the right place
+                                viewModel.onUIFullyLoaded.collect { isFullyLoaded ->
+                                    if (isFullyLoaded) {
+                                        reportFullyDrawn()
+                                    }
+                                }
                             }
                         }
                         composable("settings") {

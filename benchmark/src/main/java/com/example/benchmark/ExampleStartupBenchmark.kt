@@ -32,7 +32,6 @@ class ExampleStartupBenchmark {
             iterations = 5,
             startupMode = StartupMode.COLD
     ) {
-        pressHome()
         startActivityAndWait()
     }
 }

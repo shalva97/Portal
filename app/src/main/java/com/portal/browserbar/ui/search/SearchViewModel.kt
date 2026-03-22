@@ -23,6 +23,7 @@ class SearchViewModel(
 ) : ViewModel() {
 
     val uiState = MutableStateFlow(SearchUiState())
+    val onUIFullyLoaded = MutableStateFlow(false)
 
     private val _allApps = repository.getVisibleApps()
 
@@ -34,6 +35,7 @@ class SearchViewModel(
         repository.getRecentlyUsedApps()
             .onEach { apps ->
                 uiState.update { it.copy(recentlyUsedApps = apps) }
+                onUIFullyLoaded.value = true
             }.launchIn(viewModelScope)
 
         uiState
