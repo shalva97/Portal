@@ -16,12 +16,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        resValue("string", "app_name", "Portal: The Browser Bar")
     }
 
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             signingConfig = signingConfigs.getByName("debug")
+            resValue("string", "app_name", "Portal: Debug")
         }
         release {
             signingConfig = signingConfigs.getByName("debug")
@@ -32,10 +34,12 @@ android {
             )
         }
         create("benchmark") {
+            applicationIdSuffix = ".benchmark"
             initWith(buildTypes.getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
             isDebuggable = false
+            resValue("string", "app_name", "Portal: benchmark")
         }
     }
     compileOptions {
@@ -44,12 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
-    }
-    
-    sourceSets {
-        getByName("main") {
-            java.srcDir("build/generated/ksp/main/kotlin")
-        }
+        resValues = true
     }
 }
 
