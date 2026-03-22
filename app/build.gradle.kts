@@ -16,7 +16,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        resValue("string", "app_name", "Portal: The Browser Bar")
     }
 
     buildTypes {
@@ -26,6 +25,7 @@ android {
             resValue("string", "app_name", "Portal: Debug")
         }
         release {
+            resValue("string", "app_name", "Portal: The Browser Bar")
             signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             proguardFiles(
@@ -35,7 +35,7 @@ android {
         }
         create("benchmark") {
             applicationIdSuffix = ".benchmark"
-            initWith(buildTypes.getByName("release"))
+            isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
             isDebuggable = false
