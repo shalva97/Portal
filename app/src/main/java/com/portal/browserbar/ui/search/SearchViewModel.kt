@@ -14,10 +14,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 
 @OptIn(FlowPreview::class)
-@KoinViewModel
 class SearchViewModel(
     private val repository: AppRepository
 ) : ViewModel() {

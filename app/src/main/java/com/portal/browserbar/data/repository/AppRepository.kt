@@ -9,9 +9,7 @@ import com.portal.browserbar.data.local.AppEntity
 import com.portal.browserbar.domain.model.AppModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import org.koin.core.annotation.Single
 
-@Single
 class AppRepository(
     private val appDao: AppDao,
     private val context: Context

@@ -12,14 +12,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 
 data class SettingsUiState(
     val allApps: List<AppModel> = emptyList(),
     val recentlyInstalledApps: List<AppModel> = emptyList()
 )
 
-@KoinViewModel
 class SettingsViewModel(
     private val repository: AppRepository
 ) : ViewModel() {

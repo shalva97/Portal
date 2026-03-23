@@ -63,13 +63,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation("androidx.compose.material:material-icons-core:1.7.8")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    
-    // Koin
-    implementation(libs.koin.android)
-    implementation(libs.koin.compose)
-    implementation(libs.koin.annotations)
-    ksp(libs.koin.ksp.compiler)
-
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
