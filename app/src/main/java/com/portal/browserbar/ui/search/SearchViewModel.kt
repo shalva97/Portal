@@ -113,6 +113,10 @@ class SearchViewModel(
     fun openInPlayStore(packageName: String) {
         repository.openInPlayStore(packageName)
     }
+
+    fun openAppInfo(packageName: String) {
+        repository.openAppInfo(packageName)
+    }
 }
 
 data class SearchUiState(

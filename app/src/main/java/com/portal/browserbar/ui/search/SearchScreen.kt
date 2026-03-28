@@ -1,7 +1,8 @@
 package com.portal.browserbar.ui.search
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -158,6 +159,7 @@ fun SearchResultsList(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppGridItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, viewModel: SearchViewModel) {
     var showMenu by remember { mutableStateOf(false) }
@@ -165,7 +167,10 @@ fun AppGridItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
     Column(
         modifier = Modifier
                 .padding(8.dp)
-                .clickable { onClick() }
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = { showMenu = true }
+                )
                 .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -184,32 +189,85 @@ fun AppGridItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
             textAlign = TextAlign.Center
         )
         
-        // Simplified long press handling for this example
-        // In a real app, use pointerInput for proper long press
         Box {
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                DropdownMenuItem(text = { Text("Hide") }, onClick = { viewModel.hideApp(app.packageName); showMenu = false })
-                DropdownMenuItem(text = { Text("Uninstall") }, onClick = { viewModel.uninstallApp(app.packageName); showMenu = false })
-                DropdownMenuItem(text = { Text("Play Store") }, onClick = { viewModel.openInPlayStore(app.packageName); showMenu = false })
+                DropdownMenuItem(
+                    text = { Text("Hide") },
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_visibility_off), contentDescription = null) },
+                    onClick = {
+                        viewModel.hideApp(app.packageName)
+                        showMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("App Info") },
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_info), contentDescription = null) },
+                    onClick = {
+                        viewModel.openAppInfo(app.packageName)
+                        showMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Play Store") },
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_play_store), contentDescription = null) },
+                    onClick = {
+                        viewModel.openInPlayStore(app.packageName)
+                        showMenu = false
+                    }
+                )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppListItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, viewModel: SearchViewModel) {
-    ListItem(
-        headlineContent = { Text(app.label) },
-        supportingContent = { Text(app.packageName) },
-        leadingContent = {
-            app.icon?.let {
-                Image(
-                    bitmap = it.toBitmap().asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-        },
-        modifier = Modifier.clickable { onClick() }
-    )
+    var showMenu by remember { mutableStateOf(false) }
+
+    Box {
+        ListItem(
+            headlineContent = { Text(app.label) },
+            supportingContent = { Text(app.packageName) },
+            leadingContent = {
+                app.icon?.let {
+                    Image(
+                        bitmap = it.toBitmap().asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            },
+            modifier = Modifier.combinedClickable(
+                onClick = onClick,
+                onLongClick = { showMenu = true }
+            )
+        )
+        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenuItem(
+                text = { Text("Hide") },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_visibility_off), contentDescription = null) },
+                onClick = {
+                    viewModel.hideApp(app.packageName)
+                    showMenu = false
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("App Info") },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_info), contentDescription = null) },
+                onClick = {
+                    viewModel.openAppInfo(app.packageName)
+                    showMenu = false
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Play Store") },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_play_store), contentDescription = null) },
+                onClick = {
+                    viewModel.openInPlayStore(app.packageName)
+                    showMenu = false
+                }
+            )
+        }
+    }
 }

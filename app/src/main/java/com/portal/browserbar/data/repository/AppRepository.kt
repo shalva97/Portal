@@ -2,8 +2,8 @@ package com.portal.browserbar.data.repository
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import com.portal.browserbar.data.local.AppDao
 import com.portal.browserbar.data.local.AppEntity
 import com.portal.browserbar.domain.model.AppModel
@@ -57,7 +57,7 @@ class AppRepository(
 
     fun uninstallApp(packageName: String) {
         val intent = Intent(Intent.ACTION_DELETE).apply {
-            data = Uri.parse("package:$packageName")
+            data = "package:$packageName".toUri()
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
@@ -65,21 +65,32 @@ class AppRepository(
 
     fun openInPlayStore(packageName: String) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("market://details?id=$packageName")
+            data = "market://details?id=$packageName".toUri()
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {
             context.startActivity(intent)
-        } catch (e: Exception) {
-            intent.data = Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
-            context.startActivity(intent)
+        } catch (_: Exception) {
+            val webIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = "https://play.google.com/store/apps/details?id=$packageName".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(webIntent)
         }
+    }
+
+    fun openAppInfo(packageName: String) {
+        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = "package:$packageName".toUri()
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
     }
 
     private fun AppEntity.toModel(): AppModel {
         val icon = try {
             packageManager.getApplicationIcon(packageName)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
         return AppModel(
@@ -110,7 +121,7 @@ class AppRepository(
             val label = it.loadLabel(packageManager).toString()
             val installTime = try {
                 packageManager.getPackageInfo(packageName, 0).firstInstallTime
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 0L
             }
             AppEntity(
