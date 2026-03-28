@@ -5,8 +5,14 @@ import androidx.room.Room
 import com.portal.browserbar.data.local.AppDao
 import com.portal.browserbar.data.local.AppDatabase
 import com.portal.browserbar.data.repository.AppRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class PortalApplication : Application() {
+
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     lateinit var database: AppDatabase
         private set
@@ -20,13 +26,15 @@ class PortalApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        database = Room.databaseBuilder(
-            this,
-            AppDatabase::class.java,
-            "portal_db"
-        ).fallbackToDestructiveMigration().build()
+        applicationScope.launch(Dispatchers.IO) {
+            database = Room.databaseBuilder(
+                this@PortalApplication,
+                AppDatabase::class.java,
+                "portal_db"
+            ).fallbackToDestructiveMigration().build()
 
-        appDao = database.appDao()
-        repository = AppRepository(appDao, this)
+            appDao = database.appDao()
+            repository = AppRepository(appDao, this@PortalApplication)
+        }
     }
 }
