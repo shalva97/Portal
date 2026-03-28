@@ -10,7 +10,7 @@ The main entry point of the application, designed for quick access to apps and w
 - **Search Results List**: As the user types, a list of matching apps is shown, sorted by a fuzzy matching score and usage frequency.
 - **App Interactions**:
     - **Single Tap**: Launches the selected app and increments its usage count.
-    - **Long Press**: Opens a context menu (if implemented) or provides options like hiding the app, uninstalling it, or opening it in the Play Store (via `SearchViewModel`).
+    - **Long Press**: Opens a context menu providing options to hide the app, view app info, or open it in the Play Store.
 
 #### 2. Settings Screen (`SettingsScreen.kt`)
 Allows users to manage the behavior and visibility of apps within the launcher.
