@@ -18,8 +18,7 @@ class AppRepository(
     private val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
     companion object {
-        private const val REFRESH_COOLDOWN = 30 * 60 * 1000L // 30 minutes
-        private const val KEY_LAST_REFRESH = "last_refresh_time"
+        private const val KEY_INITIAL_REFRESH_DONE = "initial_refresh_done"
     }
 
     fun getVisibleApps(): Flow<List<AppModel>> = appDao.getVisibleApps().map { entities ->
@@ -104,35 +103,55 @@ class AppRepository(
         )
     }
 
-    suspend fun refreshApps(force: Boolean = false) {
-        val currentTime = System.currentTimeMillis()
-        val lastRefresh = prefs.getLong(KEY_LAST_REFRESH, 0L)
+    fun isInitialRefreshDone(): Boolean = prefs.getBoolean(KEY_INITIAL_REFRESH_DONE, false)
 
-        if (!force && (currentTime - lastRefresh < REFRESH_COOLDOWN)) {
-            return
-        }
+    suspend fun refreshApps() {
+        if (isInitialRefreshDone()) return
 
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
         val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
-        val entities = resolveInfos.map {
-            val packageName = it.activityInfo.packageName
-            val label = it.loadLabel(packageManager).toString()
-            val installTime = try {
-                packageManager.getPackageInfo(packageName, 0).firstInstallTime
-            } catch (_: Exception) {
-                0L
-            }
-            AppEntity(
-                packageName = packageName,
-                label = label,
-                installTime = installTime
-            )
-        }
+        val entities = resolveInfos.mapNotNull { it.toEntity() }
         appDao.insertApps(entities)
         appDao.deleteRemovedApps(entities.map { it.packageName })
         
-        prefs.edit { putLong(KEY_LAST_REFRESH, currentTime) }
+        prefs.edit { 
+            putBoolean(KEY_INITIAL_REFRESH_DONE, true)
+        }
+    }
+
+    suspend fun refreshApp(packageName: String) {
+        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            `setPackage`(packageName)
+        }
+        val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
+        val entities = resolveInfos.mapNotNull { it.toEntity() }
+        if (entities.isNotEmpty()) {
+            appDao.insertApps(entities)
+        } else {
+            // If it no longer has a launcher activity, we should probably remove it
+            appDao.deleteApp(packageName)
+        }
+    }
+
+    suspend fun removeApp(packageName: String) {
+        appDao.deleteApp(packageName)
+    }
+
+    private fun android.content.pm.ResolveInfo.toEntity(): AppEntity? {
+        val pkgName = activityInfo.packageName
+        val label = loadLabel(packageManager).toString()
+        val installTime = try {
+            packageManager.getPackageInfo(pkgName, 0).firstInstallTime
+        } catch (_: Exception) {
+            0L
+        }
+        return AppEntity(
+            packageName = pkgName,
+            label = label,
+            installTime = installTime
+        )
     }
 }

@@ -35,4 +35,7 @@ interface AppDao {
 
     @Query("DELETE FROM apps WHERE packageName NOT IN (:packageNames)")
     suspend fun deleteRemovedApps(packageNames: List<String>)
+
+    @Query("DELETE FROM apps WHERE packageName = :packageName")
+    suspend fun deleteApp(packageName: String)
 }

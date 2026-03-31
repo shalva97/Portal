@@ -26,10 +26,6 @@ class SearchViewModel(
     private val _allApps = repository.getVisibleApps()
 
     init {
-        viewModelScope.launch {
-            repository.refreshApps()
-        }
-
         repository.getRecentlyUsedApps()
             .onEach { apps ->
                 uiState.update { it.copy(recentlyUsedApps = apps) }

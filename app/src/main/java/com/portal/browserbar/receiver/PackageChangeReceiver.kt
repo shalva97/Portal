@@ -16,14 +16,24 @@ class PackageChangeReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val repository = (context.applicationContext as PortalApplication).repository
         val action = intent.action
-        if (action == Intent.ACTION_PACKAGE_ADDED || 
-            action == Intent.ACTION_PACKAGE_REMOVED || 
-            action == Intent.ACTION_PACKAGE_CHANGED ||
-            action == Intent.ACTION_PACKAGE_REPLACED) {
-            
+        val packageName = intent.data?.schemeSpecificPart
+
+        if (packageName != null) {
             scope.launch {
-                // Force refresh because we know something changed
-                repository.refreshApps(force = true)
+                when (action) {
+                    Intent.ACTION_PACKAGE_ADDED,
+                    Intent.ACTION_PACKAGE_CHANGED,
+                    Intent.ACTION_PACKAGE_REPLACED -> {
+                        repository.refreshApp(packageName)
+                    }
+                    Intent.ACTION_PACKAGE_REMOVED -> {
+                        // Check if it's a real removal or just an update in progress
+                        val isReplacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
+                        if (!isReplacing) {
+                            repository.removeApp(packageName)
+                        }
+                    }
+                }
             }
         }
     }
