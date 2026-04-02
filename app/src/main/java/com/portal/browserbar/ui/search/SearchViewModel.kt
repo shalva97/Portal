@@ -34,7 +34,7 @@ class SearchViewModel(
 
         uiState
             .map { it.query }
-            .debounce(100)
+            .debounce(50)
             .combine(_allApps) { query, apps ->
                 if (query.isBlank()) {
                     emptyList()
@@ -43,7 +43,12 @@ class SearchViewModel(
                 }
             }
             .onEach { results ->
-                uiState.update { it.copy(searchResults = results, isSearching = uiState.value.query.isNotBlank()) }
+                uiState.update {
+                    it.copy(
+                        searchResults = results,
+                        isSearching = uiState.value.query.isNotBlank()
+                    )
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -66,13 +71,13 @@ class SearchViewModel(
     private fun calculateScore(query: String, label: String): Float {
         if (label.startsWith(query)) return 100f
         if (label.contains(query)) return 50f
-        
+
         // Simple fuzzy matching (nfx -> netflix)
         var score = 0f
         var queryIdx = 0
         var labelIdx = 0
         var matches = 0
-        
+
         while (queryIdx < query.length && labelIdx < label.length) {
             if (query[queryIdx] == label[labelIdx]) {
                 matches++
@@ -80,11 +85,11 @@ class SearchViewModel(
             }
             labelIdx++
         }
-        
+
         if (matches == query.length) {
             score = 25f + (matches.toFloat() / label.length.toFloat() * 10f)
         }
-        
+
         return score
     }
 
@@ -116,8 +121,8 @@ class SearchViewModel(
 }
 
 data class SearchUiState(
-        val query: String = "",
-        val searchResults: List<AppModel> = emptyList(),
-        val recentlyUsedApps: List<AppModel> = emptyList(),
-        val isSearching: Boolean = false
+    val query: String = "",
+    val searchResults: List<AppModel> = emptyList(),
+    val recentlyUsedApps: List<AppModel> = emptyList(),
+    val isSearching: Boolean = false
 )

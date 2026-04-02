@@ -1,5 +1,6 @@
 package com.portal.browserbar.ui.search
 
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
@@ -45,7 +46,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
 import com.portal.browserbar.R
 import com.portal.browserbar.domain.model.AppModel
 
@@ -54,25 +54,26 @@ fun SearchScreen(
     viewModel: SearchViewModel,
     onOpenSettings: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
     val focusRequester = remember { FocusRequester() }
-
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
 
+    val uiState by viewModel.uiState.collectAsState()
+
     Scaffold(
         topBar = {
             SearchBar(
-                    query = uiState.query,
-                    onQueryChanged = viewModel::onQueryChanged,
-                    onSettingsClick = onOpenSettings,
-                    onDone = {
-                        uiState.searchResults.firstOrNull()?.let { viewModel.launchApp(it) }
-                    },
-                    focusRequester = focusRequester,
-                    modifier = Modifier.fillMaxWidth()
-                            .statusBarsPadding()
+                query = uiState.query,
+                onQueryChanged = viewModel::onQueryChanged,
+                onSettingsClick = onOpenSettings,
+                onDone = {
+                    uiState.searchResults.firstOrNull()?.let { viewModel.launchApp(it) }
+                },
+                focusRequester = focusRequester,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
             )
         }
     ) { padding ->
@@ -108,9 +109,9 @@ fun SearchBar(
     TextField(
         value = query,
         onValueChange = onQueryChanged,
-            modifier = modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester),
+        modifier = modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester),
         placeholder = { Text("Search apps...") },
         trailingIcon = {
             IconButton(onClick = onSettingsClick) {
@@ -140,7 +141,12 @@ fun RecentAppsGrid(
         modifier = Modifier.fillMaxSize()
     ) {
         items(apps) { app ->
-            AppGridItem(app, onClick = { onAppClick(app) }, onLongClick = { onAppLongClick(app) }, viewModel = viewModel)
+            AppGridItem(
+                app,
+                onClick = { onAppClick(app) },
+                onLongClick = { onAppLongClick(app) },
+                viewModel = viewModel
+            )
         }
     }
 }
@@ -154,29 +160,54 @@ fun SearchResultsList(
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(results) { app ->
-            AppListItem(app, onClick = { onAppClick(app) }, onLongClick = { onAppLongClick(app) }, viewModel = viewModel)
+            AppListItem(
+                app,
+                onClick = { onAppClick(app) },
+                onLongClick = { onAppLongClick(app) },
+                viewModel = viewModel
+            )
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppGridItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, viewModel: SearchViewModel) {
+fun AppGridItem(
+    app: AppModel,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    viewModel: SearchViewModel
+) {
     var showMenu by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
-                .padding(8.dp)
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = { showMenu = true }
-                )
-                .fillMaxWidth(),
+            .padding(8.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { showMenu = true }
+            )
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        app.icon?.let {
+        val bitmap = remember(app.iconPath) {
+            app.iconPath?.let { path ->
+                try {
+                    BitmapFactory.decodeFile(path)?.asImageBitmap()
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
+        if (bitmap != null) {
             Image(
-                bitmap = it.toBitmap().asImageBitmap(),
+                bitmap = bitmap,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp)
+            )
+        } else {
+            Icon(
+                painter = painterResource(R.drawable.ic_launcher_foreground),
                 contentDescription = null,
                 modifier = Modifier.size(48.dp)
             )
@@ -188,12 +219,17 @@ fun AppGridItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center
         )
-        
+
         Box {
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                 DropdownMenuItem(
                     text = { Text("Hide") },
-                    leadingIcon = { Icon(painterResource(R.drawable.ic_visibility_off), contentDescription = null) },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_visibility_off),
+                            contentDescription = null
+                        )
+                    },
                     onClick = {
                         viewModel.hideApp(app.packageName)
                         showMenu = false
@@ -201,7 +237,12 @@ fun AppGridItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
                 )
                 DropdownMenuItem(
                     text = { Text("App Info") },
-                    leadingIcon = { Icon(painterResource(R.drawable.ic_info), contentDescription = null) },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_info),
+                            contentDescription = null
+                        )
+                    },
                     onClick = {
                         viewModel.openAppInfo(app.packageName)
                         showMenu = false
@@ -209,7 +250,12 @@ fun AppGridItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
                 )
                 DropdownMenuItem(
                     text = { Text("Play Store") },
-                    leadingIcon = { Icon(painterResource(R.drawable.ic_play_store), contentDescription = null) },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_play_store),
+                            contentDescription = null
+                        )
+                    },
                     onClick = {
                         viewModel.openInPlayStore(app.packageName)
                         showMenu = false
@@ -222,7 +268,12 @@ fun AppGridItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppListItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, viewModel: SearchViewModel) {
+fun AppListItem(
+    app: AppModel,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    viewModel: SearchViewModel
+) {
     var showMenu by remember { mutableStateOf(false) }
 
     Box {
@@ -230,9 +281,24 @@ fun AppListItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
             headlineContent = { Text(app.label) },
             supportingContent = { Text(app.packageName) },
             leadingContent = {
-                app.icon?.let {
+                val bitmap = remember(app.iconPath) {
+                    app.iconPath?.let { path ->
+                        try {
+                            BitmapFactory.decodeFile(path)?.asImageBitmap()
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+                }
+                if (bitmap != null) {
                     Image(
-                        bitmap = it.toBitmap().asImageBitmap(),
+                        bitmap = bitmap,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
                         modifier = Modifier.size(40.dp)
                     )
@@ -246,7 +312,12 @@ fun AppListItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
             DropdownMenuItem(
                 text = { Text("Hide") },
-                leadingIcon = { Icon(painterResource(R.drawable.ic_visibility_off), contentDescription = null) },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.ic_visibility_off),
+                        contentDescription = null
+                    )
+                },
                 onClick = {
                     viewModel.hideApp(app.packageName)
                     showMenu = false
@@ -254,7 +325,12 @@ fun AppListItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
             )
             DropdownMenuItem(
                 text = { Text("App Info") },
-                leadingIcon = { Icon(painterResource(R.drawable.ic_info), contentDescription = null) },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.ic_info),
+                        contentDescription = null
+                    )
+                },
                 onClick = {
                     viewModel.openAppInfo(app.packageName)
                     showMenu = false
@@ -262,7 +338,12 @@ fun AppListItem(app: AppModel, onClick: () -> Unit, onLongClick: () -> Unit, vie
             )
             DropdownMenuItem(
                 text = { Text("Play Store") },
-                leadingIcon = { Icon(painterResource(R.drawable.ic_play_store), contentDescription = null) },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.ic_play_store),
+                        contentDescription = null
+                    )
+                },
                 onClick = {
                     viewModel.openInPlayStore(app.packageName)
                     showMenu = false

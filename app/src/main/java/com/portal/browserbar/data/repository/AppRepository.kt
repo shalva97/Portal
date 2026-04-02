@@ -6,13 +6,15 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import com.portal.browserbar.data.local.AppDao
 import com.portal.browserbar.data.local.AppEntity
+import com.portal.browserbar.data.local.IconStorage
 import com.portal.browserbar.domain.model.AppModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class AppRepository(
     private val appDao: AppDao,
-    private val context: Context
+    private val context: Context,
+    private val iconStorage: IconStorage
 ) {
     private val packageManager = context.packageManager
     private val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -87,15 +89,10 @@ class AppRepository(
     }
 
     private fun AppEntity.toModel(): AppModel {
-        val icon = try {
-            packageManager.getApplicationIcon(packageName)
-        } catch (_: Exception) {
-            null
-        }
         return AppModel(
             packageName = packageName,
             label = label,
-            icon = icon,
+            iconPath = iconPath,
             usageCount = usageCount,
             isHidden = isHidden,
             installTime = installTime,
@@ -106,15 +103,29 @@ class AppRepository(
     fun isInitialRefreshDone(): Boolean = prefs.getBoolean(KEY_INITIAL_REFRESH_DONE, false)
 
     suspend fun refreshApps() {
-        if (isInitialRefreshDone()) return
-
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
         val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
         val entities = resolveInfos.mapNotNull { it.toEntity() }
-        appDao.insertApps(entities)
-        appDao.deleteRemovedApps(entities.map { it.packageName })
+        
+        // Cache icons if missing
+        val entitiesWithIcons = entities.map { entity ->
+            if (entity.iconPath == null) {
+                val icon = try {
+                    packageManager.getApplicationIcon(entity.packageName)
+                } catch (_: Exception) {
+                    null
+                }
+                val path = icon?.let { iconStorage.saveIcon(entity.packageName, it) }
+                entity.copy(iconPath = path)
+            } else {
+                entity
+            }
+        }
+        
+        appDao.insertApps(entitiesWithIcons)
+        appDao.deleteRemovedApps(entitiesWithIcons.map { it.packageName })
         
         prefs.edit { 
             putBoolean(KEY_INITIAL_REFRESH_DONE, true)
@@ -124,14 +135,23 @@ class AppRepository(
     suspend fun refreshApp(packageName: String) {
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
-            `setPackage`(packageName)
+            setPackage(packageName)
         }
         val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
-        val entities = resolveInfos.mapNotNull { it.toEntity() }
+        var entities = resolveInfos.mapNotNull { it.toEntity() }
+        
         if (entities.isNotEmpty()) {
+            entities = entities.map { entity ->
+                val icon = try {
+                    packageManager.getApplicationIcon(entity.packageName)
+                } catch (_: Exception) {
+                    null
+                }
+                val path = icon?.let { iconStorage.saveIcon(entity.packageName, it) }
+                entity.copy(iconPath = path)
+            }
             appDao.insertApps(entities)
         } else {
-            // If it no longer has a launcher activity, we should probably remove it
             appDao.deleteApp(packageName)
         }
     }
@@ -140,7 +160,7 @@ class AppRepository(
         appDao.deleteApp(packageName)
     }
 
-    private fun android.content.pm.ResolveInfo.toEntity(): AppEntity? {
+    private fun android.content.pm.ResolveInfo.toEntity(): AppEntity {
         val pkgName = activityInfo.packageName
         val label = loadLabel(packageManager).toString()
         val installTime = try {
@@ -151,7 +171,8 @@ class AppRepository(
         return AppEntity(
             packageName = pkgName,
             label = label,
-            installTime = installTime
+            installTime = installTime,
+            iconPath = iconStorage.getIconPath(pkgName)
         )
     }
 }

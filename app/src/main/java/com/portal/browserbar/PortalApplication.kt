@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import com.portal.browserbar.data.local.AppDao
 import com.portal.browserbar.data.local.AppDatabase
+import com.portal.browserbar.data.local.IconStorage
 import com.portal.browserbar.data.repository.AppRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,9 +26,13 @@ class PortalApplication : Application() {
     val appDao: AppDao by lazy {
         database.appDao()
     }
+    
+    val iconStorage: IconStorage by lazy {
+        IconStorage(this)
+    }
 
     val repository: AppRepository by lazy {
-        AppRepository(appDao, this)
+        AppRepository(appDao, this, iconStorage)
     }
 
     override fun onCreate() {

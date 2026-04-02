@@ -1,5 +1,6 @@
 package com.portal.browserbar.ui.settings
 
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
 import com.portal.browserbar.R
 import com.portal.browserbar.domain.model.AppModel
 
@@ -79,12 +79,14 @@ fun AppSettingsItem(app: AppModel, viewModel: SettingsViewModel) {
         headlineContent = { Text(app.label) },
         supportingContent = { Text(app.packageName) },
         leadingContent = {
-            app.icon?.let {
-                Image(
-                    bitmap = it.toBitmap().asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp)
-                )
+            app.iconPath?.let {
+                BitmapFactory.decodeFile(it)?.let { bitmap ->
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
         },
         trailingContent = {
