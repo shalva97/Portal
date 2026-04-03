@@ -1,6 +1,6 @@
 # Portal: The Browser Bar
 
-A lightweight, efficient Android launcher and browser bar.
+A lightweight, efficient Android app search bar.
 
 ## Features
 - Fast app search with fuzzy matching.
