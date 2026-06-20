@@ -18,6 +18,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystore = System.getenv("KEYSTORE_PATH")
+            val alias = System.getenv("KEY_ALIAS")
+            val keyPass = System.getenv("KEY_PASSWORD")
+            val storePass = System.getenv("STORE_PASSWORD")
+            if (keystore != null && alias != null && keyPass != null && storePass != null) {
+                storeFile = file(keystore)
+                keyAlias = alias
+                keyPassword = keyPass
+                storePassword = storePass
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -26,7 +41,9 @@ android {
         }
         release {
             resValue("string", "app_name", "Portal: The Browser Bar")
-            signingConfig = signingConfigs.getByName("debug")
+            val releaseConfig = signingConfigs.getByName("release")
+            signingConfig = if (releaseConfig.storeFile != null) releaseConfig
+                            else signingConfigs.getByName("debug")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
