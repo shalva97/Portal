@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.portal.browserbar"
+    namespace = "com.github.shalva97.portal"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.portal.browserbar"
+        applicationId = "com.github.shalva97.portal"
         minSdk = 24
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 4
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

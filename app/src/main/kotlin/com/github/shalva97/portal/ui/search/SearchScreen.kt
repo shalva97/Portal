@@ -1,0 +1,354 @@
+package com.github.shalva97.portal.ui.search
+
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.shalva97.portal.R
+import com.github.shalva97.portal.domain.model.AppModel
+
+@Composable
+fun SearchScreen(
+    viewModel: SearchViewModel,
+    onOpenSettings: () -> Unit
+) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    Scaffold(
+        topBar = {
+            SearchBar(
+                query = uiState.query,
+                onQueryChanged = viewModel::onQueryChanged,
+                onSettingsClick = onOpenSettings,
+                onDone = {
+                    uiState.searchResults.firstOrNull()?.let { viewModel.launchApp(it) }
+                },
+                focusRequester = focusRequester,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+            )
+        }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding)) {
+            if (uiState.isSearching) {
+                SearchResultsList(
+                    results = uiState.searchResults,
+                    onAppClick = viewModel::launchApp,
+                    onAppLongClick = { /* Show menu */ },
+                    viewModel = viewModel
+                )
+            } else {
+                RecentAppsGrid(
+                    apps = uiState.recentlyUsedApps,
+                    onAppClick = viewModel::launchApp,
+                    onAppLongClick = { /* Show menu */ },
+                    viewModel = viewModel
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchBar(
+    query: String,
+    onQueryChanged: (String) -> Unit,
+    onSettingsClick: () -> Unit,
+    onDone: () -> Unit,
+    focusRequester: FocusRequester,
+    modifier: Modifier = Modifier
+) {
+    TextField(
+        value = query,
+        onValueChange = onQueryChanged,
+        modifier = modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester),
+        placeholder = { Text("Search apps...") },
+        trailingIcon = {
+            IconButton(onClick = onSettingsClick) {
+                Icon(painterResource(R.drawable.settings), contentDescription = "Settings")
+            }
+        },
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { onDone() }),
+        singleLine = true,
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
+        )
+    )
+}
+
+@Composable
+fun RecentAppsGrid(
+    apps: List<AppModel>,
+    onAppClick: (AppModel) -> Unit,
+    onAppLongClick: (AppModel) -> Unit,
+    viewModel: SearchViewModel
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        contentPadding = PaddingValues(8.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(apps) { app ->
+            AppGridItem(
+                app,
+                onClick = { onAppClick(app) },
+                onLongClick = { onAppLongClick(app) },
+                viewModel = viewModel
+            )
+        }
+    }
+}
+
+@Composable
+fun SearchResultsList(
+    results: List<AppModel>,
+    onAppClick: (AppModel) -> Unit,
+    onAppLongClick: (AppModel) -> Unit,
+    viewModel: SearchViewModel
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(results) { app ->
+            AppListItem(
+                app,
+                onClick = { onAppClick(app) },
+                onLongClick = { onAppLongClick(app) },
+                viewModel = viewModel
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AppGridItem(
+    app: AppModel,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    viewModel: SearchViewModel
+) {
+    var showMenu by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { showMenu = true }
+            )
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        val bitmap = remember(app.iconPath) {
+            app.iconPath?.let { path ->
+                try {
+                    BitmapFactory.decodeFile(path)?.asImageBitmap()
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp)
+            )
+        } else {
+            Icon(
+                painter = painterResource(R.drawable.ic_launcher_foreground),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp)
+            )
+        }
+        Text(
+            text = app.label,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
+
+        Box {
+            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                DropdownMenuItem(
+                    text = { Text("Hide") },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_visibility_off),
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        viewModel.hideApp(app.packageName)
+                        showMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("App Info") },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_info),
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        viewModel.openAppInfo(app.packageName)
+                        showMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Play Store") },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_play_store),
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        viewModel.openInPlayStore(app.packageName)
+                        showMenu = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AppListItem(
+    app: AppModel,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    viewModel: SearchViewModel
+) {
+    var showMenu by remember { mutableStateOf(false) }
+
+    Box {
+        ListItem(
+            headlineContent = { Text(app.label) },
+            supportingContent = { Text(app.packageName) },
+            leadingContent = {
+                val bitmap = remember(app.iconPath) {
+                    app.iconPath?.let { path ->
+                        try {
+                            BitmapFactory.decodeFile(path)?.asImageBitmap()
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+                }
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            },
+            modifier = Modifier.combinedClickable(
+                onClick = onClick,
+                onLongClick = { showMenu = true }
+            )
+        )
+        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenuItem(
+                text = { Text("Hide") },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.ic_visibility_off),
+                        contentDescription = null
+                    )
+                },
+                onClick = {
+                    viewModel.hideApp(app.packageName)
+                    showMenu = false
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("App Info") },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.ic_info),
+                        contentDescription = null
+                    )
+                },
+                onClick = {
+                    viewModel.openAppInfo(app.packageName)
+                    showMenu = false
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Play Store") },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.ic_play_store),
+                        contentDescription = null
+                    )
+                },
+                onClick = {
+                    viewModel.openInPlayStore(app.packageName)
+                    showMenu = false
+                }
+            )
+        }
+    }
+}
