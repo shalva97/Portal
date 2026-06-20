@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.portal.browserbar"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.portal.browserbar"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 2
         versionName = "1.1"
 
@@ -36,6 +36,7 @@ android {
         create("benchmark") {
             applicationIdSuffix = ".benchmark"
             isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
             isDebuggable = false
