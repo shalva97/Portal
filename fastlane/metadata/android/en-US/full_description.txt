@@ -1,0 +1,8 @@
+Portal is a lightweight app search bar for Android.
+
+Features:
+- Fast app search with fuzzy matching
+- Recently used and recently installed app tracking
+- Hidden app management
+- Minimal, distraction-free interface
+- Built with Jetpack Compose
