@@ -4,9 +4,11 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -45,6 +48,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.shalva97.portal.R
 import com.github.shalva97.portal.domain.model.AppModel
@@ -59,35 +64,51 @@ fun SearchScreen(
         focusRequester.requestFocus()
     }
 
+    var hasPaused by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { hasPaused = true }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (hasPaused) {
+            viewModel.resetToRecents()
+            hasPaused = false
+        }
+    }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
-            SearchBar(
-                query = uiState.query,
-                onQueryChanged = viewModel::onQueryChanged,
-                onSettingsClick = onOpenSettings,
-                onDone = {
-                    uiState.searchResults.firstOrNull()?.let { viewModel.launchApp(it) }
-                },
-                focusRequester = focusRequester,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-            )
+            Column {
+                SearchBar(
+                    query = uiState.query,
+                    onQueryChanged = viewModel::onQueryChanged,
+                    onSettingsClick = onOpenSettings,
+                    onDone = {
+                        uiState.filteredSearchResults.firstOrNull()?.let { viewModel.launchApp(it) }
+                    },
+                    focusRequester = focusRequester,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                )
+                FilterChipsRow(
+                    selectedFilter = uiState.selectedFilter,
+                    onFilterSelected = viewModel::onFilterSelected,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             if (uiState.isSearching) {
                 SearchResultsList(
-                    results = uiState.searchResults,
+                    results = uiState.filteredSearchResults,
                     onAppClick = viewModel::launchApp,
                     onAppLongClick = { /* Show menu */ },
                     viewModel = viewModel
                 )
             } else {
                 RecentAppsGrid(
-                    apps = uiState.recentlyUsedApps,
+                    apps = uiState.displayApps,
                     onAppClick = viewModel::launchApp,
                     onAppLongClick = { /* Show menu */ },
                     viewModel = viewModel
@@ -126,6 +147,26 @@ fun SearchBar(
             unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
         )
     )
+}
+
+@Composable
+fun FilterChipsRow(
+    selectedFilter: AppFilter,
+    onFilterSelected: (AppFilter) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        AppFilter.entries.forEach { filter ->
+            FilterChip(
+                selected = selectedFilter == filter,
+                onClick = { onFilterSelected(filter) },
+                label = { Text(filter.label) }
+            )
+        }
+    }
 }
 
 @Composable

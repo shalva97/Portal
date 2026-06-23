@@ -32,6 +32,10 @@ class SearchViewModel(
                 onUIFullyLoaded.value = true
             }.launchIn(viewModelScope)
 
+        _allApps
+            .onEach { apps -> uiState.update { it.copy(allApps = apps) } }
+            .launchIn(viewModelScope)
+
         uiState
             .map { it.query }
             .debounce(50)
@@ -118,11 +122,38 @@ class SearchViewModel(
     fun openAppInfo(packageName: String) {
         repository.openAppInfo(packageName)
     }
+
+    fun onFilterSelected(filter: AppFilter) {
+        uiState.update { it.copy(selectedFilter = filter) }
+    }
+
+    fun resetToRecents() {
+        uiState.update { it.copy(query = "", selectedFilter = AppFilter.RECENTS, isSearching = false) }
+    }
+}
+
+enum class AppFilter(val label: String) {
+    RECENTS("Recents"),
+    ALL("All"),
+    GAMES("Games")
 }
 
 data class SearchUiState(
     val query: String = "",
     val searchResults: List<AppModel> = emptyList(),
     val recentlyUsedApps: List<AppModel> = emptyList(),
-    val isSearching: Boolean = false
-)
+    val allApps: List<AppModel> = emptyList(),
+    val isSearching: Boolean = false,
+    val selectedFilter: AppFilter = AppFilter.RECENTS
+) {
+    val displayApps: List<AppModel> get() = when (selectedFilter) {
+        AppFilter.RECENTS -> recentlyUsedApps
+        AppFilter.ALL -> allApps
+        AppFilter.GAMES -> allApps.filter { it.isGame }
+    }
+
+    val filteredSearchResults: List<AppModel> get() = when (selectedFilter) {
+        AppFilter.GAMES -> searchResults.filter { it.isGame }
+        else -> searchResults
+    }
+}

@@ -2,6 +2,8 @@ package com.github.shalva97.portal.data.repository
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.os.Build
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import com.github.shalva97.portal.data.local.AppDao
@@ -96,7 +98,8 @@ class AppRepository(
             usageCount = usageCount,
             isHidden = isHidden,
             installTime = installTime,
-            lastUsedTime = lastUsedTime
+            lastUsedTime = lastUsedTime,
+            isGame = isGame
         )
     }
 
@@ -168,11 +171,21 @@ class AppRepository(
         } catch (_: Exception) {
             0L
         }
+        val isGame = try {
+            val appInfo = packageManager.getApplicationInfo(pkgName, 0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                appInfo.category == ApplicationInfo.CATEGORY_GAME
+            } else {
+                @Suppress("DEPRECATION")
+                appInfo.flags and ApplicationInfo.FLAG_IS_GAME != 0
+            }
+        } catch (_: Exception) { false }
         return AppEntity(
             packageName = pkgName,
             label = label,
             installTime = installTime,
-            iconPath = iconStorage.getIconPath(pkgName)
+            iconPath = iconStorage.getIconPath(pkgName),
+            isGame = isGame
         )
     }
 }
