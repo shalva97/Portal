@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -77,25 +79,28 @@ fun SearchScreen(
 
     Scaffold(
         topBar = {
-            Column {
-                SearchBar(
-                    query = uiState.query,
-                    onQueryChanged = viewModel::onQueryChanged,
-                    onSettingsClick = onOpenSettings,
-                    onDone = {
-                        uiState.filteredSearchResults.firstOrNull()?.let { viewModel.launchApp(it) }
-                    },
-                    focusRequester = focusRequester,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                )
-                FilterChipsRow(
-                    selectedFilter = uiState.selectedFilter,
-                    onFilterSelected = viewModel::onFilterSelected,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            SearchBar(
+                query = uiState.query,
+                onQueryChanged = viewModel::onQueryChanged,
+                onSettingsClick = onOpenSettings,
+                onDone = {
+                    uiState.filteredSearchResults.firstOrNull()?.let { viewModel.launchApp(it) }
+                },
+                focusRequester = focusRequester,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+            )
+        },
+        bottomBar = {
+            FilterChipsRow(
+                selectedFilter = uiState.selectedFilter,
+                onFilterSelected = viewModel::onFilterSelected,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .imePadding()
+            )
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
@@ -157,7 +162,7 @@ fun FilterChipsRow(
 ) {
     Row(
         modifier = modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
     ) {
         AppFilter.entries.forEach { filter ->
             FilterChip(
