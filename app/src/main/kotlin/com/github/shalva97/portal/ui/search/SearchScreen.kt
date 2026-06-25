@@ -108,14 +108,12 @@ fun SearchScreen(
                 SearchResultsList(
                     results = uiState.filteredSearchResults,
                     onAppClick = viewModel::launchApp,
-                    onAppLongClick = { /* Show menu */ },
                     viewModel = viewModel
                 )
             } else {
                 RecentAppsGrid(
                     apps = uiState.displayApps,
                     onAppClick = viewModel::launchApp,
-                    onAppLongClick = { /* Show menu */ },
                     viewModel = viewModel
                 )
             }
@@ -178,7 +176,6 @@ fun FilterChipsRow(
 fun RecentAppsGrid(
     apps: List<AppModel>,
     onAppClick: (AppModel) -> Unit,
-    onAppLongClick: (AppModel) -> Unit,
     viewModel: SearchViewModel
 ) {
     LazyVerticalGrid(
@@ -190,7 +187,6 @@ fun RecentAppsGrid(
             AppGridItem(
                 app,
                 onClick = { onAppClick(app) },
-                onLongClick = { onAppLongClick(app) },
                 viewModel = viewModel
             )
         }
@@ -201,7 +197,6 @@ fun RecentAppsGrid(
 fun SearchResultsList(
     results: List<AppModel>,
     onAppClick: (AppModel) -> Unit,
-    onAppLongClick: (AppModel) -> Unit,
     viewModel: SearchViewModel
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -209,7 +204,6 @@ fun SearchResultsList(
             AppListItem(
                 app,
                 onClick = { onAppClick(app) },
-                onLongClick = { onAppLongClick(app) },
                 viewModel = viewModel
             )
         }
@@ -221,7 +215,6 @@ fun SearchResultsList(
 fun AppGridItem(
     app: AppModel,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
     viewModel: SearchViewModel
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -317,7 +310,6 @@ fun AppGridItem(
 fun AppListItem(
     app: AppModel,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
     viewModel: SearchViewModel
 ) {
     var showMenu by remember { mutableStateOf(false) }
