@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(FlowPreview::class)
 class SearchViewModel(
@@ -38,7 +39,7 @@ class SearchViewModel(
 
         uiState
             .map { it.query }
-            .debounce(50)
+            .debounce(50.milliseconds)
             .combine(_allApps) { query, apps ->
                 if (query.isBlank()) {
                     emptyList()
@@ -58,7 +59,26 @@ class SearchViewModel(
     }
 
     fun onQueryChanged(newQuery: String) {
+        val currentState = uiState.value
+        if (currentState.isShortcutMode) {
+            val letter = newQuery.firstOrNull { it.isLetter() }
+            if (letter != null) {
+                val index = letter.lowercaseChar() - 'a'
+                val apps = currentState.displayApps
+                if (index in apps.indices) launchApp(apps[index])
+            }
+            uiState.update { it.copy(query = "") }
+            return
+        }
+        if (currentState.query.isEmpty() && newQuery == " ") {
+            uiState.update { it.copy(isShortcutMode = true) }
+            return
+        }
         uiState.update { it.copy(query = newQuery) }
+    }
+
+    fun exitShortcutMode() {
+        uiState.update { it.copy(isShortcutMode = false, query = "") }
     }
 
     private fun searchApps(query: String, apps: List<AppModel>): List<AppModel> {
@@ -101,7 +121,7 @@ class SearchViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             repository.incrementUsage(app.packageName)
             repository.launchApp(app.packageName)
-            uiState.update { it.copy(query = "") } // Reset search after launch
+            uiState.update { it.copy(query = "", isShortcutMode = false) }
         }
     }
 
@@ -128,7 +148,7 @@ class SearchViewModel(
     }
 
     fun resetToRecents() {
-        uiState.update { it.copy(query = "", selectedFilter = AppFilter.RECENTS, isSearching = false) }
+        uiState.update { it.copy(query = "", selectedFilter = AppFilter.RECENTS, isSearching = false, isShortcutMode = false) }
     }
 }
 
@@ -144,7 +164,8 @@ data class SearchUiState(
     val recentlyUsedApps: List<AppModel> = emptyList(),
     val allApps: List<AppModel> = emptyList(),
     val isSearching: Boolean = false,
-    val selectedFilter: AppFilter = AppFilter.RECENTS
+    val selectedFilter: AppFilter = AppFilter.RECENTS,
+    val isShortcutMode: Boolean = false
 ) {
     val displayApps: List<AppModel> get() = when (selectedFilter) {
         AppFilter.RECENTS -> recentlyUsedApps

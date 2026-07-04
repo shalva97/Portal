@@ -1,8 +1,10 @@
 package com.github.shalva97.portal.ui.search
 
 import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,8 +21,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenu
@@ -52,6 +55,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,6 +82,10 @@ fun SearchScreen(
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    BackHandler(enabled = uiState.isShortcutMode) {
+        viewModel.exitShortcutMode()
+    }
 
     Scaffold(
         topBar = {
@@ -116,7 +124,8 @@ fun SearchScreen(
                 RecentAppsGrid(
                     apps = uiState.displayApps,
                     onAppClick = viewModel::launchApp,
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    isShortcutMode = uiState.isShortcutMode
                 )
             }
         }
@@ -178,18 +187,20 @@ fun FilterChipsRow(
 fun RecentAppsGrid(
     apps: List<AppModel>,
     onAppClick: (AppModel) -> Unit,
-    viewModel: SearchViewModel
+    viewModel: SearchViewModel,
+    isShortcutMode: Boolean = false
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
         contentPadding = PaddingValues(8.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        items(apps) { app ->
+        itemsIndexed(apps) { index, app ->
             AppGridItem(
                 app,
                 onClick = { onAppClick(app) },
-                viewModel = viewModel
+                viewModel = viewModel,
+                shortcutLetter = if (isShortcutMode && index < 26) 'a' + index else null
             )
         }
     }
@@ -217,7 +228,8 @@ fun SearchResultsList(
 fun AppGridItem(
     app: AppModel,
     onClick: () -> Unit,
-    viewModel: SearchViewModel
+    viewModel: SearchViewModel,
+    shortcutLetter: Char? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -231,27 +243,45 @@ fun AppGridItem(
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val bitmap = remember(app.iconPath) {
-            app.iconPath?.let { path ->
-                try {
-                    BitmapFactory.decodeFile(path)?.asImageBitmap()
-                } catch (_: Exception) {
-                    null
+        Box {
+            val bitmap = remember(app.iconPath) {
+                app.iconPath?.let { path ->
+                    try {
+                        BitmapFactory.decodeFile(path)?.asImageBitmap()
+                    } catch (_: Exception) {
+                        null
+                    }
                 }
             }
-        }
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp)
-            )
-        } else {
-            Icon(
-                painter = painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = null,
-                modifier = Modifier.size(48.dp)
-            )
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp)
+                )
+            } else {
+                Icon(
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+            if (shortcutLetter != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .size(16.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = shortcutLetter.uppercaseChar().toString(),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontSize = 9.sp,
+                        lineHeight = 9.sp
+                    )
+                }
+            }
         }
         Text(
             text = app.label,
