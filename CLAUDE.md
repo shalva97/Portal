@@ -33,6 +33,8 @@ Jetpack Compose + Material3. Navigation via `NavHost` with string routes `"searc
 
 **SearchViewModel** — exposes `uiState: MutableStateFlow<SearchUiState>` directly. Search pipeline: `debounce(50ms)` → fuzzy scorer (exact prefix = 100, substring = 50, sequential char match = 25 + density bonus, plus `usageCount * 0.1`). `AppFilter` enum: `RECENTS`, `ALL`, `GAMES`.
 
+**Shortcut mode** — activated by pressing Space when the search bar is empty. Sets `SearchUiState.isShortcutMode = true`. While active, each app in the grid shows a letter badge (A, B, C…) in its top-left corner; typing that letter launches the corresponding app. Back button exits shortcut mode via `BackHandler`. `exitShortcutMode()`, `launchApp()`, and `resetToRecents()` all clear `isShortcutMode`.
+
 **SettingsViewModel** — manages app visibility. "Recently installed" = apps installed within the last hour.
 
 ### Screens
