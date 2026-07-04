@@ -282,6 +282,22 @@ fun AppGridItem(
                     )
                 }
             }
+            if (app.isPinned) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(16.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_pin),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(10.dp)
+                    )
+                }
+            }
         }
         Text(
             text = app.label,
@@ -293,6 +309,19 @@ fun AppGridItem(
 
         Box {
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                DropdownMenuItem(
+                    text = { Text(if (app.isPinned) "Unpin" else "Pin") },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_pin),
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        viewModel.togglePin(app.packageName)
+                        showMenu = false
+                    }
+                )
                 DropdownMenuItem(
                     text = { Text("Hide") },
                     leadingIcon = {
@@ -381,6 +410,19 @@ fun AppListItem(
             )
         )
         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenuItem(
+                text = { Text(if (app.isPinned) "Unpin" else "Pin") },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.ic_pin),
+                        contentDescription = null
+                    )
+                },
+                onClick = {
+                    viewModel.togglePin(app.packageName)
+                    showMenu = false
+                }
+            )
             DropdownMenuItem(
                 text = { Text("Hide") },
                 leadingIcon = {

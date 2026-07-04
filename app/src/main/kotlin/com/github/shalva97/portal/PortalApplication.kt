@@ -20,7 +20,7 @@ class PortalApplication : Application() {
             this,
             AppDatabase::class.java,
             "portal_db"
-        ).fallbackToDestructiveMigration(true).build()
+        ).addMigrations(AppDatabase.MIGRATION_3_4).fallbackToDestructiveMigration(true).build()
     }
 
     val appDao: AppDao by lazy {

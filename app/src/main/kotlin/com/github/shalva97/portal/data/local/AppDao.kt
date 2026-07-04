@@ -33,6 +33,12 @@ interface AppDao {
     @Query("UPDATE apps SET isHidden = :isHidden WHERE packageName = :packageName")
     suspend fun setHidden(packageName: String, isHidden: Boolean)
 
+    @Query("SELECT * FROM apps WHERE isPinned = 1 ORDER BY label ASC")
+    fun getPinnedApps(): Flow<List<AppEntity>>
+
+    @Query("UPDATE apps SET isPinned = :isPinned WHERE packageName = :packageName")
+    suspend fun setPinned(packageName: String, isPinned: Boolean)
+
     @Query("DELETE FROM apps WHERE packageName NOT IN (:packageNames)")
     suspend fun deleteRemovedApps(packageNames: List<String>)
 

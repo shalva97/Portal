@@ -12,5 +12,6 @@ data class AppEntity(
     val installTime: Long = 0L,
     val lastUsedTime: Long = 0L,
     val iconPath: String? = null,
-    val isGame: Boolean = false
+    val isGame: Boolean = false,
+    val isPinned: Boolean = false
 )

@@ -8,5 +8,6 @@ data class AppModel(
     val isHidden: Boolean = false,
     val installTime: Long = 0L,
     val lastUsedTime: Long = 0L,
-    val isGame: Boolean = false
+    val isGame: Boolean = false,
+    val isPinned: Boolean = false
 )

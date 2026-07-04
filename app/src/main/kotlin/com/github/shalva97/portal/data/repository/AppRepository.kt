@@ -50,6 +50,14 @@ class AppRepository(
         appDao.setHidden(packageName, isHidden)
     }
 
+    fun getPinnedApps(): Flow<List<AppModel>> = appDao.getPinnedApps().map { entities ->
+        entities.map { it.toModel() }
+    }
+
+    suspend fun setPinned(packageName: String, isPinned: Boolean) {
+        appDao.setPinned(packageName, isPinned)
+    }
+
     fun launchApp(packageName: String) {
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         if (intent != null) {
@@ -99,7 +107,8 @@ class AppRepository(
             isHidden = isHidden,
             installTime = installTime,
             lastUsedTime = lastUsedTime,
-            isGame = isGame
+            isGame = isGame,
+            isPinned = isPinned
         )
     }
 

@@ -37,6 +37,10 @@ class SearchViewModel(
             .onEach { apps -> uiState.update { it.copy(allApps = apps) } }
             .launchIn(viewModelScope)
 
+        repository.getPinnedApps()
+            .onEach { apps -> uiState.update { it.copy(pinnedApps = apps) } }
+            .launchIn(viewModelScope)
+
         uiState
             .map { it.query }
             .debounce(50.milliseconds)
@@ -131,6 +135,13 @@ class SearchViewModel(
         }
     }
 
+    fun togglePin(packageName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val isPinned = uiState.value.pinnedApps.any { it.packageName == packageName }
+            repository.setPinned(packageName, !isPinned)
+        }
+    }
+
     fun uninstallApp(packageName: String) {
         repository.uninstallApp(packageName)
     }
@@ -163,12 +174,16 @@ data class SearchUiState(
     val searchResults: List<AppModel> = emptyList(),
     val recentlyUsedApps: List<AppModel> = emptyList(),
     val allApps: List<AppModel> = emptyList(),
+    val pinnedApps: List<AppModel> = emptyList(),
     val isSearching: Boolean = false,
     val selectedFilter: AppFilter = AppFilter.RECENTS,
     val isShortcutMode: Boolean = false
 ) {
     val displayApps: List<AppModel> get() = when (selectedFilter) {
-        AppFilter.RECENTS -> recentlyUsedApps
+        AppFilter.RECENTS -> {
+            val pinnedPackages = pinnedApps.map { it.packageName }.toSet()
+            pinnedApps + recentlyUsedApps.filter { it.packageName !in pinnedPackages }
+        }
         AppFilter.ALL -> allApps
         AppFilter.GAMES -> allApps.filter { it.isGame }
     }

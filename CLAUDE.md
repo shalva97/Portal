@@ -35,6 +35,8 @@ Jetpack Compose + Material3. Navigation via `NavHost` with string routes `"searc
 
 **Shortcut mode** — activated by pressing Space when the search bar is empty. Sets `SearchUiState.isShortcutMode = true`. While active, each app in the grid shows a letter badge (A, B, C…) in its top-left corner; typing that letter launches the corresponding app. Back button exits shortcut mode via `BackHandler`. `exitShortcutMode()`, `launchApp()`, and `resetToRecents()` all clear `isShortcutMode`.
 
+**Pinned apps** — long-press context menu exposes "Pin"/"Unpin". Pinned apps are stored via `isPinned` on `AppEntity` (Room column, DB version 4). `AppDao.getPinnedApps()` returns a `Flow<List<AppEntity>>` ordered by label. `SearchUiState` holds a `pinnedApps` list; `displayApps` for the `RECENTS` filter prepends pinned apps before the 8 recent apps (duplicates excluded). Pinned apps show a primary-colored circle with a pin icon (`ic_pin.xml`) in the top-right corner of their grid tile. `SearchViewModel.togglePin()` flips the current state by checking `pinnedApps`.
+
 **SettingsViewModel** — manages app visibility. "Recently installed" = apps installed within the last hour.
 
 ### Screens
