@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.Build
-import androidx.core.content.edit
 import androidx.core.net.toUri
 import com.github.shalva97.portal.data.local.AppDao
 import com.github.shalva97.portal.data.local.AppEntity
@@ -19,11 +18,6 @@ class AppRepository(
     private val iconStorage: IconStorage
 ) {
     private val packageManager = context.packageManager
-    private val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-
-    companion object {
-        private const val KEY_INITIAL_REFRESH_DONE = "initial_refresh_done"
-    }
 
     fun getVisibleApps(): Flow<List<AppModel>> = appDao.getVisibleApps().map { entities ->
         entities.map { it.toModel() }
@@ -112,8 +106,6 @@ class AppRepository(
         )
     }
 
-    fun isInitialRefreshDone(): Boolean = prefs.getBoolean(KEY_INITIAL_REFRESH_DONE, false)
-
     suspend fun refreshApps() {
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
@@ -138,10 +130,6 @@ class AppRepository(
         
         appDao.insertApps(entitiesWithIcons)
         appDao.deleteRemovedApps(entitiesWithIcons.map { it.packageName })
-        
-        prefs.edit { 
-            putBoolean(KEY_INITIAL_REFRESH_DONE, true)
-        }
     }
 
     suspend fun refreshApp(packageName: String) {
