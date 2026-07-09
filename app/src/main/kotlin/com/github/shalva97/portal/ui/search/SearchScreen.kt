@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
@@ -124,10 +125,12 @@ fun SearchScreen(
                 )
             } else {
                 RecentAppsGrid(
+                    modifier = Modifier.fillMaxSize(),
                     apps = uiState.displayApps,
                     onAppClick = viewModel::launchApp,
                     viewModel = viewModel,
-                    isShortcutMode = uiState.isShortcutMode
+                    isShortcutMode = uiState.isShortcutMode,
+                    showHint = !uiState.isShortcutMode
                 )
             }
         }
@@ -187,15 +190,17 @@ fun FilterChipsRow(
 
 @Composable
 fun RecentAppsGrid(
+    modifier: Modifier = Modifier,
     apps: List<AppModel>,
     onAppClick: (AppModel) -> Unit,
     viewModel: SearchViewModel,
-    isShortcutMode: Boolean = false
+    isShortcutMode: Boolean = false,
+    showHint: Boolean = false,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
         contentPadding = PaddingValues(8.dp),
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier
     ) {
         itemsIndexed(apps) { index, app ->
             AppGridItem(
@@ -204,6 +209,19 @@ fun RecentAppsGrid(
                 viewModel = viewModel,
                 shortcutLetter = if (isShortcutMode && index < 26) 'a' + index else null
             )
+        }
+        if (showHint) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = "Press Space to show shortcuts",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
         }
     }
 }
