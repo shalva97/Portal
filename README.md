@@ -15,7 +15,6 @@ A lightweight, efficient Android app search bar.
 
 
 ## Setup
-- Donwload it from the latest release https://github.com/shalva97/Portal/releases
 - add it in gestures or shortcuts section of your current launcher
 - For example, add it to home button tap.
 - Optional: set animation scale to 0x so it is even faster
