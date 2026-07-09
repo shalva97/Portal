@@ -94,7 +94,9 @@ fun SearchScreen(
                 onQueryChanged = viewModel::onQueryChanged,
                 onSettingsClick = onOpenSettings,
                 onDone = {
-                    uiState.filteredSearchResults.firstOrNull()?.let { viewModel.launchApp(it) }
+                    val app = if (uiState.isSearching) uiState.filteredSearchResults.firstOrNull()
+                              else uiState.displayApps.firstOrNull()
+                    app?.let { viewModel.launchApp(it) }
                 },
                 focusRequester = focusRequester,
                 modifier = Modifier
